@@ -1,0 +1,62 @@
+MAKEFLAGS += --no-builtin-rules
+
+CXX := g++
+CXXFLAGS := -std=c++17 -Wall -m64 -MMD -MP
+CXXFLAGS_DEV := -O0 -g
+CXXFLAGS_REL := -O3
+DEBUG := gdb
+LIBS := -lpthread -lglut -lm
+CPPFLAGS := $(addprefix -I, ./include $(wildcard ./include/*))
+CPPFLAGS += `pkg-config --cflags opencv`
+ifeq "$(shell getconf LONG_BIT)" "64"
+  LDFLAGS := `pkg-config --libs opencv`
+else
+  LDFLAGS :=
+endif
+
+BIN_NAME :=
+BIN_DIR := ./bin
+BINARY := $(BIN_DIR)/$(BIN_NAME)
+
+SRC_DIR := ./src
+SOURCES := $(SRC_FILES)
+SOURCES += $(foreach dir,$(SRC_DIRS),$(shell find $(dir) -regex ".*\.cpp"))
+
+OBJ_DIR := ./obj
+OBJECTS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(SOURCES:.cpp=.o))
+
+DEPENDS := $(OBJECTS:.o=.d)
+
+.DEFAULT_GOAL := release
+
+release : CXX_FLAGS += $(CXXFLAGS_REL)
+release : $(BINARY)
+
+develop : CXX_FLAGS += $(CXXFLAGS_DEV)
+develop : $(BINARY)
+
+$(BINARY) : $(OBJECTS) $(LIBS)
+	mkdir -p $(@D)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
+	mkdir -p $(@D)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
+
+all : clean release
+
+debug :
+	$(DEBUG) $(BINARY)
+
+run:
+	$(BINARY)
+
+clear :
+	-rm -rf $(BINARY)
+
+clean :
+	-rm -rf $(OBJECTS) $(BINARY)
+
+.PHONY : all debug run clean clear
+
+-include $(DEPENDS)
