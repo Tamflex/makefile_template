@@ -13,6 +13,7 @@ ifeq "$(shell getconf LONG_BIT)" "64"
 else
   LDFLAGS :=
 endif
+SUFFIX=.cpp
 
 BIN_NAME :=
 BIN_DIR := ./bin
@@ -23,7 +24,7 @@ SOURCES := $(SRC_FILES)
 SOURCES += $(foreach dir,$(SRC_DIRS),$(shell find $(dir) -regex ".*\.cpp"))
 
 OBJ_DIR := ./obj
-OBJECTS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(SOURCES:.cpp=.o))
+OBJECTS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%,$(SOURCES:$(SUFFIX)=.o))
 
 DEPENDS := $(OBJECTS:.o=.d)
 
@@ -39,7 +40,7 @@ $(BINARY) : $(OBJECTS) $(LIBS)
 	mkdir -p $(@D)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-$(OBJ_DIR)/%.o : $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o : $(SRC_DIR)/%$(SUFFIX)
 	mkdir -p $(@D)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
 
